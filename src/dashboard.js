@@ -115,7 +115,7 @@ const Dashboard = () => {
               : "QC Passed"}
           </div>
           <div className="processing-time">
-            Processing Time: {result[0].toFixed(2) / 8} sec
+            Processing Time: {result[0].toFixed(2)} sec
           </div>
           <button
             type="button"
