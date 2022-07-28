@@ -28,7 +28,7 @@ const Dashboard = () => {
 
   const handleStartQC = async () => {
     setIsLoading(true);
-    const res = await axios.get(`${CAMERA_API_URL}/analysis`);
+    const res = await axios.get(`${PYTHON_API_URL}/analysis`);
     setIsLoading(false);
     setResult(res?.data?.data?.analysis);
     setDeviation(res?.data?.data?.dividend);
@@ -86,7 +86,7 @@ const Dashboard = () => {
           >
             {selectedFile && (
               <img
-                src={`${PYTHON_API_URL}/images?params=${selectedFile}&args=${imageCount}`}
+                src={`${CAMERA_API_URL}/images?params=${selectedFile}&args=${imageCount}`}
                 alt={imageCount}
               />
             )}
