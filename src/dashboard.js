@@ -1,21 +1,39 @@
 import "./dashboard.css";
-import Header from "./Components/Header";
-import React, { useState } from "react";
-import { Row, Col } from "react-bootstrap";
 import axios from "axios";
+import Header from "./Components/Header";
+import React, { useState, useContext, useEffect } from "react";
+import { Row, Col } from "react-bootstrap";
 import Loader from "./Components/Loader";
+import { SocketContext } from "./SocketContext";
 
 const CAMERA_API_URL = `${process.env.REACT_APP_CAMERA_BACKEND}`;
 const PYTHON_API_URL = `${process.env.REACT_APP_PYTHON_BACKEND}`;
 
 const Dashboard = () => {
+  const socket = useContext(SocketContext);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [imageCount, setImageCount] = useState(0);
-  const [deviation, setDeviation] = useState(1);
   const [defects, setDefects] = useState(0);
   const [missing, setMissing] = useState(0);
+  const [time, setTime] = useState(null);
+
+  useEffect(() => {
+    socket.on("react-output", (data) => {
+      setResult(data?.info);
+      setTime(data?.time);
+      let missingele = 0;
+      let defectsele = 0;
+      Object.values(data?.info).forEach((element) => {
+        if (!element[0]) missingele++;
+        if (element[0] && element[1] > 1) defectsele++;
+      });
+      setMissing(missingele);
+      setDefects(defectsele);
+      setIsLoading(false);
+    });
+  }, [socket]);
 
   const handleImageCapture = async () => {
     setSelectedFile(null);
@@ -28,37 +46,14 @@ const Dashboard = () => {
 
   const handleStartQC = async () => {
     setIsLoading(true);
-    const res = await axios.get(`${PYTHON_API_URL}/analysis`);
-    setIsLoading(false);
-    setResult(res?.data?.data?.analysis);
-    setDeviation(res?.data?.data?.dividend);
-    let missingele = 0;
-    let defectsele = 0;
-    if (typeof res?.data?.data?.analysis === "string") return;
-    res?.data?.data?.analysis?.forEach((element, index) => {
-      if (element?.present === false) {
-        missingele++;
-      }
-      if (
-        element?.dev &&
-        element?.dev / 25 > 1 &&
-        index !== 19 &&
-        index !== 20 &&
-        index !== 21 &&
-        index !== 22
-      ) {
-        defectsele++;
-      }
-    });
-    setMissing(missingele);
-    setDefects(defectsele);
+    await axios.get(`${PYTHON_API_URL}/analysis`);
   };
 
   const handleReset = () => {
     setSelectedFile(null);
     setResult(null);
+    setTime(null);
     setImageCount(imageCount + 1);
-    setDeviation(1);
     setDefects(0);
     setMissing(0);
   };
@@ -94,7 +89,7 @@ const Dashboard = () => {
           <Col className="image-div" style={{ marginLeft: "10px" }}>
             {result && (
               <img
-                src={`${PYTHON_API_URL}/images?params=result.jpg&args=${imageCount}`}
+                src={`${PYTHON_API_URL}/images?params=automobile_result.bmp&args=${imageCount}`}
                 alt={imageCount}
               />
             )}
@@ -115,7 +110,7 @@ const Dashboard = () => {
               : "QC Passed"}
           </div>
           <div className="processing-time">
-            Processing Time: {result[0].toFixed(2)} sec
+            Processing Time: {time && time?.toFixed(2)} sec
           </div>
           <button
             type="button"
@@ -167,14 +162,13 @@ const Dashboard = () => {
               Deviation (mm)
             </div>
           </div>
-          {result.map((item, i) => {
-            if (i === 0) return null;
+          {Object.keys(result).map((key, i) => {
             return (
               <div className="table-cont" key={i}>
                 <div
                   style={{ width: "35%", color: "gray", textAlign: "center" }}
                 >
-                  {item?.name}
+                  {key}
                 </div>
                 <div
                   style={{
@@ -183,31 +177,33 @@ const Dashboard = () => {
                     textAlign: "center",
                   }}
                 >
-                  {item?.dim
-                    ? item?.name === "Central Hub"
-                      ? "10.00/18"
-                      : (item?.dim / deviation).toFixed(2)
-                    : "--"}
+                  {result[key][0] && result[key].length > 2
+                    ? result[key][2]
+                    : "---"}
                 </div>
                 <div
                   style={{
-                    color: `${item?.present ? "green" : "red"}`,
+                    color: `${result[key][0] ? "green" : "red"}`,
                     fontSize: "14px",
                     textAlign: "center",
                   }}
                 >
-                  {item?.present ? "True" : "False"}
+                  {result[key][0] ? "True" : "False"}
                 </div>
                 <div
                   style={{
                     color: `${
-                      item?.dev ? (item?.dev / 25 > 1 ? "red" : "gray") : "gray"
+                      result[key][0]
+                        ? result[key][1] <= 1
+                          ? "gray"
+                          : "red"
+                        : "gray"
                     }`,
                     fontSize: "14px",
                     textAlign: "center",
                   }}
                 >
-                  {item?.dev ? (item?.dev / 25).toFixed(2) : "--"}
+                  {result[key][0] ? result[key][1] : "---"}
                 </div>
               </div>
             );
