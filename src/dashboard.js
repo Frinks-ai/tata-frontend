@@ -27,7 +27,7 @@ const Dashboard = () => {
       let defectsele = 0;
       Object.values(data?.info).forEach((element) => {
         if (!element[0]) missingele++;
-        if (element[0] && element[1] > 1) defectsele++;
+        if (element[0] && element[1] > 1.2) defectsele++;
       });
       setMissing(missingele);
       setDefects(defectsele);
@@ -124,9 +124,8 @@ const Dashboard = () => {
         <div className="text-center mb-4">
           <button
             type="button"
-            className={`btn btn-${
-              selectedFile !== null ? "danger" : "primary"
-            } px-4 py-2 rounded`}
+            className={`btn btn-${selectedFile !== null ? "danger" : "primary"
+              } px-4 py-2 rounded`}
             onClick={handleImageCapture}
           >
             {selectedFile !== null ? "Retake" : "Start Test"}
@@ -192,13 +191,12 @@ const Dashboard = () => {
                 </div>
                 <div
                   style={{
-                    color: `${
-                      result[key][0]
-                        ? result[key][1] <= 1
+                    color: `${result[key][0]
+                        ? result[key][1] <= 1.2
                           ? "gray"
                           : "red"
                         : "gray"
-                    }`,
+                      }`,
                     fontSize: "14px",
                     textAlign: "center",
                   }}
